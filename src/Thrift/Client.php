@@ -13,20 +13,23 @@ class Thrift_Client {
 	
 	private $client;
 	
+	private static $default_options = array(
+	);
+	
 	public function __construct($client_class, array $servers, array $options = array()) {
 		$this->client_class = $client_class;
 		$this->servers = $servers;
-		$this->options = $options;
+		$this->options = array_merge(self::$default_options, $options);
 	}
 	
-	private function _superUnlikelyClientMethod() {
+	private function client() {
 		if ($this->client === null) {
 			foreach ($this->servers as $server) {
 				list($host, $port) = explode(':', $server);
+				$socket = new TSocket($host, $port);
+				$protocol = new TBinaryProtocol($socket);
+				$client = new $this->client_class($protocol);
 				try {
-					$socket = new TSocket($host, $port);
-					$protocol = new TBinaryProtocol($socket);
-					$client = new SillyClient($protocol);
 					$socket->open();
 				} catch (Exception $e) {
 					continue;
@@ -39,6 +42,6 @@ class Thrift_Client {
 	}
 	
 	public function __call($name, $args) {
-		return call_user_func_array(array($this->_superUnlikelyClientMethod(), $name), $args);
+		return call_user_func_array(array($this->client(), $name), $args);
 	}
 }
