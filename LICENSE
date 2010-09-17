@@ -23,3 +23,14 @@ GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
 HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
 LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
 OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+--------------------------------------------------
+SOFTWARE DISTRIBUTED WITH PHP-THRIFT-CLIENT:
+
+The Apache Thrift PHP library is included with this distribution for ease
+of testing and for integration into PHP environments lacking a full Thrift
+install. All files under the thrift subdirectory correspond to lib/php/src
+in the full Thrift download (http://incubator.apache.org/thrift/), with
+the exception of thrift/packages/silly, which was auto-generated from
+test/silly.thrift. The Thrift library is licensed under the Apache License,
+Version 2.0, a copy of which can be found in thrift/THRIFT-LICENSE.
