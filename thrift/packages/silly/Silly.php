@@ -10,6 +10,7 @@ include_once $GLOBALS['THRIFT_ROOT'].'/packages/silly/silly_types.php';
 
 interface SillyIf {
   public function ping();
+  public function pause($millisecs);
   public function rot13($something);
   public function shutdown();
 }
@@ -73,6 +74,54 @@ class SillyClient implements SillyIf {
       return $result->success;
     }
     throw new Exception("ping failed: unknown result");
+  }
+
+  public function pause($millisecs)
+  {
+    $this->send_pause($millisecs);
+    $this->recv_pause();
+  }
+
+  public function send_pause($millisecs)
+  {
+    $args = new Silly_pause_args();
+    $args->millisecs = $millisecs;
+    $bin_accel = ($this->output_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_write_binary');
+    if ($bin_accel)
+    {
+      thrift_protocol_write_binary($this->output_, 'pause', TMessageType::CALL, $args, $this->seqid_, $this->output_->isStrictWrite());
+    }
+    else
+    {
+      $this->output_->writeMessageBegin('pause', TMessageType::CALL, $this->seqid_);
+      $args->write($this->output_);
+      $this->output_->writeMessageEnd();
+      $this->output_->getTransport()->flush();
+    }
+  }
+
+  public function recv_pause()
+  {
+    $bin_accel = ($this->input_ instanceof TProtocol::$TBINARYPROTOCOLACCELERATED) && function_exists('thrift_protocol_read_binary');
+    if ($bin_accel) $result = thrift_protocol_read_binary($this->input_, 'Silly_pause_result', $this->input_->isStrictRead());
+    else
+    {
+      $rseqid = 0;
+      $fname = null;
+      $mtype = 0;
+
+      $this->input_->readMessageBegin($fname, $mtype, $rseqid);
+      if ($mtype == TMessageType::EXCEPTION) {
+        $x = new TApplicationException();
+        $x->read($this->input_);
+        $this->input_->readMessageEnd();
+        throw $x;
+      }
+      $result = new Silly_pause_result();
+      $result->read($this->input_);
+      $this->input_->readMessageEnd();
+    }
+    return;
   }
 
   public function rot13($something)
@@ -266,6 +315,128 @@ class Silly_ping_result {
       $xfer += $output->writeBool($this->success);
       $xfer += $output->writeFieldEnd();
     }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class Silly_pause_args {
+  static $_TSPEC;
+
+  public $millisecs = null;
+
+  public function __construct($vals=null) {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        1 => array(
+          'var' => 'millisecs',
+          'type' => TType::I32,
+          ),
+        );
+    }
+    if (is_array($vals)) {
+      if (isset($vals['millisecs'])) {
+        $this->millisecs = $vals['millisecs'];
+      }
+    }
+  }
+
+  public function getName() {
+    return 'Silly_pause_args';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        case 1:
+          if ($ftype == TType::I32) {
+            $xfer += $input->readI32($this->millisecs);
+          } else {
+            $xfer += $input->skip($ftype);
+          }
+          break;
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Silly_pause_args');
+    if ($this->millisecs !== null) {
+      $xfer += $output->writeFieldBegin('millisecs', TType::I32, 1);
+      $xfer += $output->writeI32($this->millisecs);
+      $xfer += $output->writeFieldEnd();
+    }
+    $xfer += $output->writeFieldStop();
+    $xfer += $output->writeStructEnd();
+    return $xfer;
+  }
+
+}
+
+class Silly_pause_result {
+  static $_TSPEC;
+
+
+  public function __construct() {
+    if (!isset(self::$_TSPEC)) {
+      self::$_TSPEC = array(
+        );
+    }
+  }
+
+  public function getName() {
+    return 'Silly_pause_result';
+  }
+
+  public function read($input)
+  {
+    $xfer = 0;
+    $fname = null;
+    $ftype = 0;
+    $fid = 0;
+    $xfer += $input->readStructBegin($fname);
+    while (true)
+    {
+      $xfer += $input->readFieldBegin($fname, $ftype, $fid);
+      if ($ftype == TType::STOP) {
+        break;
+      }
+      switch ($fid)
+      {
+        default:
+          $xfer += $input->skip($ftype);
+          break;
+      }
+      $xfer += $input->readFieldEnd();
+    }
+    $xfer += $input->readStructEnd();
+    return $xfer;
+  }
+
+  public function write($output) {
+    $xfer = 0;
+    $xfer += $output->writeStructBegin('Silly_pause_result');
     $xfer += $output->writeFieldStop();
     $xfer += $output->writeStructEnd();
     return $xfer;
@@ -501,6 +672,16 @@ class SillyProcessor {
     $result = new Silly_ping_result();
     $result->success = $this->handler_->ping();
     $output->writeMessageBegin('ping', TMessageType::REPLY, $seqid);
+    $result->write($output);
+    $output->getTransport()->flush();
+  }
+  protected function process_pause($seqid, $input, $output) {
+    $args = new Silly_pause_args();
+    $args->read($input);
+    $input->readMessageEnd();
+    $result = new Silly_pause_result();
+    $this->handler_->pause($args->millisecs);
+    $output->writeMessageBegin('pause', TMessageType::REPLY, $seqid);
     $result->write($output);
     $output->getTransport()->flush();
   }

@@ -70,7 +70,7 @@ class Thrift_ClientTest extends PHPUnit_Framework_TestCase {
 	}
 	
 	public function testSimpleConnection() {
-		$silly_client = new Thrift_Client('SillyClient', array("localhost:$this->port"));
+		$silly_client = $this->createClient($this->port);
 		$result = $silly_client->rot13('foo');
 		$this->assertEquals(str_rot13('foo'), $result);
 	}
@@ -90,5 +90,22 @@ class Thrift_ClientTest extends PHPUnit_Framework_TestCase {
 		$failover_client = new Thrift_Client('SillyClient', array("localhost:$dead_port", "localhost:$this->port"));
 		$result = $failover_client->rot13('foo');
 		$this->assertEquals(str_rot13('foo'), $result);
+	}
+	
+	public function testTimeout() {
+		$client = $this->createClient($this->port);
+		$client->timeout = .2;
+		$client->pause(150);
+		
+		$start = microtime(true);
+		try {
+			$client->pause(250);
+		} catch (TTransportException $e) {
+			$time = microtime(true) - $start;
+			$expected = .2;
+			$this->assertLessThan(.001, abs($expected - $time), "Timeout expected at {$expected}s, actual time = $time");
+			return;
+		}
+		$this->fail('TTransportException expected');
 	}
 }

@@ -28,6 +28,8 @@ service Silly {
 
   bool ping()
 
+  void pause(1:i32 millisecs)
+
   string rot13(1:string something)
 
   oneway void shutdown()

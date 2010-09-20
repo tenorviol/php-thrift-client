@@ -59,6 +59,10 @@ class SillyServer implements SillyIf {
 		return true;
 	}
 	
+	public function pause($millisecs) {
+		usleep($millisecs*1000);
+	}
+	
 	public function rot13($something) {
 		return str_rot13($something);
 	}

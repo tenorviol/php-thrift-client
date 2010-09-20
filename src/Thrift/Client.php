@@ -41,12 +41,13 @@ class Thrift_Client {
 	private $client;
 	
 	private static $default_options = array(
+		'timeout'=>1,
 	);
 	
-	public function __construct($client_class, array $servers, array $options = array()) {
+	public function __construct($client_class, array $servers) {
 		$this->client_class = $client_class;
 		$this->servers = $servers;
-		$this->options = array_merge(self::$default_options, $options);
+		$this->options = self::$default_options;
 	}
 	
 	private function client() {
@@ -54,6 +55,7 @@ class Thrift_Client {
 			foreach ($this->servers as $server) {
 				list($host, $port) = explode(':', $server);
 				$socket = new TSocket($host, $port);
+				$socket->setRecvTimeout($this->options['timeout']*1000);
 				$protocol = new TBinaryProtocol($socket);
 				$client = new $this->client_class($protocol);
 				try {
@@ -69,6 +71,17 @@ class Thrift_Client {
 			}
 		}
 		return $this->client;
+	}
+	
+	public function __set($name, $value) {
+		$name = strtolower($name);
+		switch ($name) {
+		case 'timeout':
+			$this->options['timeout'] = $value <= 0 ? self::$default_options['timeout'] : $value;
+			break;
+		default:
+			throw new InvalidArgumentException("Unsupported option, $name=$value");
+		}
 	}
 	
 	public function __call($name, $args) {
