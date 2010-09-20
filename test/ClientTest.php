@@ -38,7 +38,7 @@ class Thrift_ClientTest extends PHPUnit_Framework_TestCase {
 		
 		// start the server
 		exec("php test/silly_server.php $port >/dev/null &");
-		usleep(100000);  // give it a dsec
+		usleep(100000);  // give it a decisec
 		
 		$silly_client = new Thrift_Client('SillyClient', array("localhost:$port"));
 		

@@ -55,6 +55,10 @@ class SillyServer implements SillyIf {
 		$this->server->serve();
 	}
 	
+	public function ping() {
+		return true;
+	}
+	
 	public function rot13($something) {
 		return str_rot13($something);
 	}

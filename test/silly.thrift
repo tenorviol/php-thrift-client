@@ -25,6 +25,10 @@
 # OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 service Silly {
+
+  bool ping()
+
   string rot13(1:string something)
+
   oneway void shutdown()
 }
