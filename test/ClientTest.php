@@ -33,19 +33,62 @@ require_once $GLOBALS['THRIFT_ROOT'].'/packages/silly/Silly.php';
 
 class Thrift_ClientTest extends PHPUnit_Framework_TestCase {
 	
-	public function test() {
-		$port = 9876;
-		
-		// start the server
+	private function createClient($port) {
+		return new Thrift_Client('SillyClient', array("localhost:$port"));
+	}
+	
+	private function openupServer($port) {
 		exec("php test/silly_server.php $port >/dev/null &");
-		usleep(100000);  // give it a decisec
-		
-		$silly_client = new Thrift_Client('SillyClient', array("localhost:$port"));
-		
-		$send = 'foo';
+		$client = $this->createClient($port);
+		$start = microtime(true);
+		$pong = false;
+		while (!$pong) {
+			usleep(10000);
+			try {
+				$pong = $client->ping();
+			} catch (Exception $e) {
+				if (microtime(true) - $start > 1) {
+					$this->fail("Unable to confirm silly server started on port $port");
+				}
+			}
+		}
+	}
+	
+	private function shutdownServer($port) {
+		$client = $this->createClient($port);
+		$client->shutdown();
+	}
+	
+	private $port = 9876;
+	
+	public function setUp() {
+		$this->openupServer($this->port);
+	}
+	
+	public function tearDown() {
+		$this->shutdownServer($this->port);
+	}
+	
+	public function testSimpleConnection() {
+		$silly_client = new Thrift_Client('SillyClient', array("localhost:$this->port"));
 		$result = $silly_client->rot13('foo');
-		$this->assertEquals(str_rot13($send), $result);
+		$this->assertEquals(str_rot13('foo'), $result);
+	}
+	
+	public function testFailoverConnection() {
+		$dead_port = 9875;
+		$this->assertNotEquals($this->port, $random_port);
 		
-		$silly_client->shutdown();
+		$dead_client = $this->createClient($dead_port);
+		try {
+			$dead_client->rot13('foo');
+			$this->fail('The dead client should not be working');
+		} catch (Exception $e) {
+			// success, carry on
+		}
+		
+		$failover_client = new Thrift_Client('SillyClient', array("localhost:$dead_port", "localhost:$this->port"));
+		$result = $failover_client->rot13('foo');
+		$this->assertEquals(str_rot13('foo'), $result);
 	}
 }

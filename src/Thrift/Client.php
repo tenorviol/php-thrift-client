@@ -58,11 +58,14 @@ class Thrift_Client {
 				$client = new $this->client_class($protocol);
 				try {
 					$socket->open();
-				} catch (Exception $e) {
+				} catch (TException $e) {
 					continue;
 				}
 				$this->client = $client;
 				break;
+			}
+			if ($this->client === null) {
+				throw new Exception('Unable to connect');
 			}
 		}
 		return $this->client;
