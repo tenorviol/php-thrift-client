@@ -38,15 +38,16 @@ class Thrift_Client {
 	private $servers;
 	private $options;
 	
+	private $socket;
 	private $client;
 	
 	private static $default_options = array(
 		'timeout'=>1,
 	);
 	
-	public function __construct($client_class, array $servers) {
+	public function __construct($client_class, $servers) {
 		$this->client_class = $client_class;
-		$this->servers = $servers;
+		$this->servers = (array)$servers;
 		$this->options = self::$default_options;
 	}
 	
@@ -55,7 +56,6 @@ class Thrift_Client {
 			foreach ($this->servers as $server) {
 				list($host, $port) = explode(':', $server);
 				$socket = new TSocket($host, $port);
-				$socket->setRecvTimeout($this->options['timeout']*1000);
 				$protocol = new TBinaryProtocol($socket);
 				$client = new $this->client_class($protocol);
 				try {
@@ -63,6 +63,7 @@ class Thrift_Client {
 				} catch (TException $e) {
 					continue;
 				}
+				$this->socket = $socket;
 				$this->client = $client;
 				break;
 			}
@@ -70,6 +71,7 @@ class Thrift_Client {
 				throw new Exception('Unable to connect');
 			}
 		}
+		$this->socket->setRecvTimeout($this->options['timeout']*1000);
 		return $this->client;
 	}
 	
@@ -85,6 +87,7 @@ class Thrift_Client {
 	}
 	
 	public function __call($name, $args) {
+		$client = $this->client();
 		return call_user_func_array(array($this->client(), $name), $args);
 	}
 }

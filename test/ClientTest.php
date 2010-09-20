@@ -34,7 +34,7 @@ require_once $GLOBALS['THRIFT_ROOT'].'/packages/silly/Silly.php';
 class Thrift_ClientTest extends PHPUnit_Framework_TestCase {
 	
 	private function createClient($port) {
-		return new Thrift_Client('SillyClient', array("localhost:$port"));
+		return new Thrift_Client('SillyClient', "localhost:$port");
 	}
 	
 	private function openupServer($port) {
@@ -88,6 +88,7 @@ class Thrift_ClientTest extends PHPUnit_Framework_TestCase {
 		}
 		
 		$failover_client = new Thrift_Client('SillyClient', array("localhost:$dead_port", "localhost:$this->port"));
+		
 		$result = $failover_client->rot13('foo');
 		$this->assertEquals(str_rot13('foo'), $result);
 	}
